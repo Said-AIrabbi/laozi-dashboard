@@ -1,0 +1,60 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC',
+    'Microsoft JhengHei', sans-serif;
+  background: #f0f4f8;
+  color: #1a2a35;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numbers for data cells */
+td,
+.ant-statistic-content,
+.ant-table-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Alternating table rows */
+.table-row-alt td {
+  background: #f8fafc !important;
+}
+
+/* Total row in activity table */
+.table-row-total td {
+  background: #eef5fa !important;
+  font-weight: 700 !important;
+}
+
+/* Warning row (any metric over threshold) */
+.table-row-warn td {
+  background: #fff8f8 !important;
+}
+
+/* Antd overrides */
+.ant-card-head {
+  min-height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.ant-card-head-title {
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.ant-table-thead > tr > th {
+  background: #f0f4f8 !important;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a6070;
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 13px;
+}
