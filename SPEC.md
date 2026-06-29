@@ -1,6 +1,6 @@
 # 荖子鍋營運 BI Dashboard — 規格書
 
-> 版本：v1.1　最後更新：2026-06-29
+> 版本：v1.2　最後更新：2026-06-29
 
 ---
 
@@ -18,6 +18,7 @@
 10. [匯出功能](#10-匯出功能)
 11. [設計系統](#11-設計系統)
 12. [路由規則](#12-路由規則)
+13. [報表上傳（Import）](#13-報表上傳import)
 
 ---
 
@@ -59,7 +60,8 @@ src/
 │
 ├── context/
 │   ├── RoleContext.tsx         # 登入狀態、使用者清單
-│   └── SettingsContext.tsx     # 可調整門檻值（食材/人事占比）
+│   ├── SettingsContext.tsx     # 可調整門檻值（食材/人事占比）
+│   └── ImportContext.tsx       # 報表匯入記錄（in-memory）
 │
 ├── lib/
 │   ├── colors.ts              # 語意色彩常數與工具函式
@@ -81,7 +83,8 @@ src/
 │   ├── Login.tsx              # 登入頁
 │   ├── Overview.tsx           # 全店總覽
 │   ├── StoreDetail.tsx        # 分店月報
-│   └── AdminUsers.tsx         # 使用者管理（管理者限定）
+│   ├── AdminUsers.tsx         # 使用者管理（管理者限定）
+│   └── ImportData.tsx         # 報表上傳（店長限定）
 │
 └── components/
     ├── AppHeader.tsx
@@ -132,10 +135,11 @@ manager     → storeIds[] 指定的分店
 | 全店總覽 `/` | ✅ | ✅ | ✅ | ✅（多店時） |
 | 分店月報 `/store/:id` | ✅ | ✅ | ✅（區內） | ✅（自己的店） |
 | 使用者管理 `/admin/users` | ✅ | ❌ | ❌ | ❌ |
+| 報表上傳 `/import` | ❌ | ❌ | ❌ | ✅ |
 
 ### 4.4 登入後重導向規則
 
-- **Manager（單店）：** 自動跳轉至 `/store/:storeId`，不顯示返回總覽按鈕
+- **Manager（單店）：** 自動跳轉至 `/store/:storeId`，不顯示返回總覽按鈕；僅在根路徑 `/` 時觸發重導向，不干擾其他頁面導航
 - **Manager（多店）：** 停在總覽，僅顯示自己負責的門市，顯示返回按鈕
 - **Supervisor / Director / Admin：** 停在總覽
 
@@ -520,7 +524,7 @@ manager + 單店 → /store/:storeId
 位置：所有認證頁面頂部
 內容：
   左：🍲 荖子鍋 · 營運 BI Dashboard
-  右：RoleSwitcher | 使用者管理（admin only）| 登出
+  右：RoleSwitcher | 報表上傳（manager only）| 使用者管理（admin only）| 登出
 樣式：背景 #1F4E5F，白字
 ```
 
@@ -686,6 +690,20 @@ thresholds: {
 setThresholds(t: Thresholds): void
 ```
 
+### ImportContext
+
+```typescript
+// 提供：
+records: ImportRecord[]
+addRecord(r: Omit<ImportRecord, 'id'>): string   // 回傳新 id
+updateRecord(id: string, patch: Partial<ImportRecord>): void
+removeRecord(id: string): void
+```
+
+- 純 in-memory，重新整理後重置
+- 初始化時載入 7 筆 seed 記錄，涵蓋：匯入成功、門市不符、期間不符、失敗等狀態
+- 由 `ImportProvider` 包覆全 App（位於 `SettingsProvider` 內層）
+
 門檻值影響範圍：
 - 全站所有 RatioBarChart 的 markLine 位置
 - DetailBarChart 食材/人事費用的條色
@@ -796,13 +814,102 @@ getLockedRegionIds(user): string[]
 /login          → Login.tsx          （公開，未登入才可進入）
 /               → Overview.tsx       （需登入）
 /store/:storeId → StoreDetail.tsx    （需登入，角色過濾）
-/admin/users    → AdminUsers.tsx     （需登入，建議加 admin 守衛）
+/admin/users    → AdminUsers.tsx     （需登入，admin 守衛）
+/import         → ImportData.tsx     （需登入，manager 守衛）
 *               → 重導向 /
 ```
 
 **RequireAuth：** 未登入時重導向至 `/login`，附帶 `from` state 供登入後返回。
 
+**角色守衛：** `AdminUsers` 和 `ImportData` 在元件頂層各自做角色檢查，非允許角色直接 `<Navigate to="/" replace />`，防止直接輸入 URL 繞過。
+
 ---
+
+---
+
+## 13. 報表上傳（Import）
+
+**路徑：** `src/pages/ImportData.tsx`  
+**存取限制：** 僅 `manager` 可進入（其他角色自動重導向至 `/`）  
+**入口：** AppHeader 右側「報表上傳」按鈕（僅 manager 可見）  
+**性質：** Prototype 示範介面，不解析檔案內容、不寫入後端、不影響儀表板現有數字
+
+> 頁面頂部顯示說明橫幅：「目前為示範介面，實際解析與數據更新將於正式版實作。」
+
+### 版面（三區塊由上而下）
+
+#### 區塊 A — 上傳表單
+
+| 欄位 | 元件 | 說明 |
+|---|---|---|
+| 門市 | Select | `getVisibleStores` 過濾；單店 manager 自動填入並 disable |
+| 期間 | DatePicker `picker="month"` | 預設 2026-02 |
+| 報表類型 | Select | 10 種固定清單（見下表） |
+| 檔案 | Upload.Dragger | `accept=".xlsx,.xls,.csv"`，可一次選多檔 |
+| 開始匯入 | Button primary | 驗證後觸發匯入流程 |
+
+**匯入流程：**
+1. 驗證門市、期間、報表類型、檔案皆已選取
+2. 檢查是否已有「相同 門市＋期間＋報表類型」的 `success` 記錄 → 有則跳 Modal 確認覆蓋
+3. 覆蓋確認後：移除舊 success 記錄，加入新 `parsing` 記錄，1.5 秒後更新為 `success`
+
+#### 區塊 C — 本期報表到齊狀況
+
+- 依表單所選門市＋期間過濾 `success` 記錄，列出 10 種報表的 ✅ / ⬜ 狀態
+- 必要報表未上傳 → 紅字標示
+- 彙整句：「尚缺 N 份必要報表：…」或「必要報表已全數到齊，可進行月結。」
+
+#### 區塊 B — 匯入紀錄表
+
+欄位：門市、期間、報表類型、檔名、上傳時間、狀態 Tag、操作（重新匯入 / 刪除）
+
+| 狀態 | 色彩 | 說明 |
+|---|---|---|
+| 匯入成功 | 綠 `#1D9E75` | 解析完成 |
+| 解析中 | 藍 `#378ADD` + 轉圈 | 處理中 |
+| 門市不符 | 橘 `#EF9F27` | 檔案門市與所選不符（seed 示意） |
+| 期間不符 | 橘 `#EF9F27` | 檔案期間與所選不符（seed 示意） |
+| 重複 | 灰 | 同門市＋期間＋類型已存在 |
+| 失敗 | 紅 `#E24B4A` | 解析失敗 |
+
+- `parsing` 中的記錄：重新匯入與刪除按鈕皆 disable
+- 頁面頂部（標題上方）有「← 返回門市業績頁」link 按鈕，導向 `/store/:storeId`
+
+### 報表類型清單（10 種）
+
+| key | 顯示名稱 | 必要 |
+|---|---|:---:|
+| `pos_daily` | POS 營業帳務日報表 | ✅ |
+| `product_txn` | 商品銷售明細 | ✅ |
+| `product_summary` | 商品銷售統計表 | |
+| `purchase` | 採購入庫清單 | ✅ |
+| `crm_store` | CRM 分店版（儀表板） | ✅ |
+| `crm_group` | CRM 總店版（會員招募） | |
+| `customer_analysis` | 顧客消費分析 | |
+| `labor` | 工時表 | ✅ |
+| `other_items` | 其他項目表單 | ✅ |
+| `target` | 營業目標表 | ✅ |
+
+### 相關型別
+
+```typescript
+type ReportType = 'pos_daily' | 'product_txn' | 'product_summary' | 'purchase'
+  | 'crm_store' | 'crm_group' | 'customer_analysis'
+  | 'labor' | 'other_items' | 'target';
+
+type ImportStatus = 'success' | 'parsing' | 'store_mismatch'
+  | 'period_mismatch' | 'duplicate' | 'failed';
+
+interface ImportRecord {
+  id: string;
+  storeId: string;
+  period: string;       // 'YYYY-MM'
+  reportType: ReportType;
+  fileName: string;
+  uploadedAt: string;   // ISO
+  status: ImportStatus;
+}
+```
 
 ---
 
@@ -812,5 +919,6 @@ getLockedRegionIds(user): string[]
 |---|---|---|
 | v1.0 | 2026-06-23 | 初版：基礎 BI Dashboard，3 角色（admin/supervisor/manager） |
 | v1.1 | 2026-06-29 | 新增 director 角色；商場競爭分析功能（MallPieChart + MallTrendChart）；Overview 商場單店下拉選單；Store 新增 mallName；StoreDetail 新增 mall 資料；SGS稽核分數更名 |
+| v1.2 | 2026-06-29 | 新增報表上傳頁（ImportData）與 ImportContext；限定 manager 角色存取；AppHeader 加入入口按鈕；修正單店 manager 初始導向邏輯（僅在根路徑 `/` 觸發）；加入返回門市業績頁按鈕 |
 
 *本規格書依程式碼狀態同步更新，如有後續功能迭代請同步維護。*

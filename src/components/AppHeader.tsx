@@ -1,5 +1,5 @@
 import { Button, Space, Typography, Tooltip } from 'antd';
-import { TeamOutlined, LogoutOutlined } from '@ant-design/icons';
+import { TeamOutlined, LogoutOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useRole } from '../context/RoleContext';
 import RoleSwitcher from './RoleSwitcher';
@@ -33,6 +33,24 @@ export default function AppHeader() {
       <Space size={12}>
         {/* Role switcher (demo only) */}
         <RoleSwitcher />
+
+        {/* Report upload — manager only */}
+        {currentUser?.role === 'manager' && (
+          <Tooltip title="報表上傳">
+            <Button
+              icon={<UploadOutlined />}
+              size="small"
+              onClick={() => navigate('/import')}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                borderColor: 'transparent',
+                color: '#fff',
+              }}
+            >
+              報表上傳
+            </Button>
+          </Tooltip>
+        )}
 
         {/* User management — admin only */}
         {currentUser?.role === 'admin' && (

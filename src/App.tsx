@@ -4,10 +4,12 @@ import { ConfigProvider } from 'antd';
 import zhTW from 'antd/locale/zh_TW';
 import { RoleProvider, useRole } from './context/RoleContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { ImportProvider } from './context/ImportContext';
 import Login from './pages/Login';
 import Overview from './pages/Overview';
 import StoreDetail from './pages/StoreDetail';
 import AdminUsers from './pages/AdminUsers';
+import ImportData from './pages/ImportData';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useRole();
@@ -21,14 +23,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { currentUser, isLoggedIn } = useRole();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Manager: redirect to their store after login
+  // Manager with single store: redirect to their store only from the root path
   useEffect(() => {
-    if (isLoggedIn && currentUser?.role === 'manager') {
+    if (isLoggedIn && currentUser?.role === 'manager' && location.pathname === '/') {
       const ids = currentUser.storeIds ?? [];
       if (ids.length === 1) navigate(`/store/${ids[0]}`, { replace: true });
     }
-  }, [isLoggedIn, currentUser, navigate]);
+  }, [isLoggedIn, currentUser, navigate, location.pathname]);
 
   return (
     <Routes>
@@ -57,6 +60,14 @@ function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/import"
+        element={
+          <RequireAuth>
+            <ImportData />
+          </RequireAuth>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -76,11 +87,13 @@ export default function App() {
       }}
     >
       <SettingsProvider>
-        <RoleProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </RoleProvider>
+        <ImportProvider>
+          <RoleProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </RoleProvider>
+        </ImportProvider>
       </SettingsProvider>
     </ConfigProvider>
   );

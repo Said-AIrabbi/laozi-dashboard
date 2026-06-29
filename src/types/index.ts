@@ -113,3 +113,22 @@ export const THRESHOLDS = {
   food: { min: 30, max: 33 },
   labor: { min: 14, max: 17 },
 } as const;
+
+export type ReportType =
+  | 'pos_daily' | 'product_txn' | 'product_summary' | 'purchase'
+  | 'crm_store' | 'crm_group' | 'customer_analysis'
+  | 'labor' | 'other_items' | 'target';
+
+export type ImportStatus =
+  | 'success' | 'parsing' | 'store_mismatch'
+  | 'period_mismatch' | 'duplicate' | 'failed';
+
+export interface ImportRecord {
+  id: string;
+  storeId: string;
+  period: string;       // 'YYYY-MM'
+  reportType: ReportType;
+  fileName: string;
+  uploadedAt: string;   // ISO
+  status: ImportStatus;
+}
