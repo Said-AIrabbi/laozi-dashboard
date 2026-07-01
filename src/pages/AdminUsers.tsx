@@ -16,6 +16,7 @@ import {
   Popconfirm,
   Divider,
   message,
+  Tooltip,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -47,6 +48,8 @@ const roleColor: Record<Role, string> = {
 
 type FormValues = {
   name: string;
+  username: string;
+  password?: string;
   role: Role;
   regionIds?: string[];
   managerRegions?: string[]; // UI-only filter, not saved to User
@@ -90,6 +93,8 @@ export default function AdminUsers() {
         : [];
     form.setFieldsValue({
       name: user.name,
+      username: user.username,
+      password: undefined,
       role: user.role,
       regionIds: user.regionIds ?? [],
       managerRegions,
@@ -109,23 +114,27 @@ export default function AdminUsers() {
         const newUser: User = {
           id: `u-${Date.now()}`,
           name: values.name,
+          username: values.username,
+          password: values.password!,
           role: values.role,
           regionIds: values.role === 'supervisor' ? (values.regionIds ?? []) : undefined,
           storeIds:  values.role === 'manager'    ? (values.storeIds  ?? []) : undefined,
         };
         setLocalUsers((prev) => [...prev, newUser]);
-        messageApi.success(`已新增使用者「${newUser.name}」`);
+        messageApi.success(`已新增使用者「${newUser.name}」（帳號：${newUser.username}）`);
       } else if (editTarget) {
         const updated: User = {
           ...editTarget,
           name: values.name,
+          username: values.username,
+          password: values.password ? values.password : editTarget.password,
           role: values.role,
           regionIds: values.role === 'supervisor' ? (values.regionIds ?? []) : undefined,
           storeIds:  values.role === 'manager'    ? (values.storeIds  ?? []) : undefined,
         };
         setLocalUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
         updateUser(updated);
-        messageApi.success(`已更新「${updated.name}」的權限`);
+        messageApi.success(`已更新「${updated.name}」的設定`);
       }
       setEditTarget(null);
       setIsAdding(false);
@@ -161,6 +170,16 @@ export default function AdminUsers() {
             <Tag style={{ fontSize: 10, padding: '0 4px' }}>目前登入</Tag>
           )}
         </Space>
+      ),
+    },
+    {
+      title: '帳號',
+      dataIndex: 'username',
+      key: 'username',
+      render: (username: string) => (
+        <Tooltip title="登入用帳號">
+          <Typography.Text code style={{ fontSize: 12 }}>{username}</Typography.Text>
+        </Tooltip>
       ),
     },
     {
@@ -383,6 +402,36 @@ export default function AdminUsers() {
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="name" label="姓名" rules={[{ required: true, message: '請輸入姓名' }]}>
             <Input placeholder="例：王小明" />
+          </Form.Item>
+
+          <Form.Item
+            name="username"
+            label="帳號"
+            rules={[
+              { required: true, message: '請輸入帳號' },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const isDup = localUsers.some(
+                    (u) => u.username === value.trim() && u.id !== editTarget?.id,
+                  );
+                  return isDup ? Promise.reject('此帳號已被使用') : Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input placeholder="例：wang_xiaoming" autoComplete="off" />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label={isAdding ? '密碼' : '密碼（留空則維持不變）'}
+            rules={isAdding ? [{ required: true, message: '請設定密碼' }] : []}
+          >
+            <Input.Password
+              placeholder={isAdding ? '請設定密碼' : '留空則維持不變'}
+              autoComplete="new-password"
+            />
           </Form.Item>
 
           <Form.Item name="role" label="角色" rules={[{ required: true, message: '請選擇角色' }]}>

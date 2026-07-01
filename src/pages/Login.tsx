@@ -22,21 +22,6 @@ const roleColor: Record<string, string> = {
   manager: COLORS.green,
 };
 
-// Fake credential map: username → password
-const CREDENTIALS: Record<string, string> = {
-  admin: 'admin123',
-  director: 'dir123',
-  supervisor: 'sup123',
-  manager: 'mgr123',
-};
-
-// Map username key → user id
-const USERNAME_TO_ID: Record<string, string> = {
-  admin: 'u-admin',
-  director: 'u-director',
-  supervisor: 'u-sup',
-  manager: 'u-mgr',
-};
 
 export default function Login() {
   const { login, allUsers } = useRole();
@@ -46,14 +31,10 @@ export default function Login() {
 
   const handleSubmit = ({ username, password }: { username: string; password: string }) => {
     setLoading(true);
-    // Simulate async login
     setTimeout(() => {
       setLoading(false);
-      const expectedPwd = CREDENTIALS[username.trim().toLowerCase()];
-      const userId = USERNAME_TO_ID[username.trim().toLowerCase()];
-      const user = allUsers.find((u) => u.id === userId);
-
-      if (!expectedPwd || password !== expectedPwd || !user) {
+      const user = allUsers.find((u) => u.username === username.trim());
+      if (!user || user.password !== password) {
         messageApi.error('帳號或密碼錯誤');
         return;
       }
@@ -188,10 +169,11 @@ export default function Login() {
               <span style={{ fontWeight: 600, fontSize: 14, color: '#1a2a35' }}>
                 {user.name}
               </span>
-              <span style={{ marginLeft: 'auto', fontSize: 12, color: '#aaa' }}>
-                {user.role === 'director' && '全區檢視'}
-                {user.role === 'supervisor' && '桃園區'}
-                {user.role === 'manager' && '平鎮店'}
+              <span style={{ fontSize: 12, color: '#999', fontFamily: 'monospace' }}>
+                {user.username}
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 12, color: '#bbb' }}>
+                {user.password}
               </span>
             </div>
           ))}
@@ -206,7 +188,7 @@ export default function Login() {
             color: '#bbb',
           }}
         >
-          Demo 帳號密碼：admin / admin123 · director / dir123 · supervisor / sup123 · manager / mgr123
+          點擊上方列表可快速登入，密碼顯示於各列右側
         </Text>
       </Card>
     </div>

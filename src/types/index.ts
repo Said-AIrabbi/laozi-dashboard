@@ -31,6 +31,8 @@ export interface Store {
 export interface User {
   id: string;
   name: string;
+  username: string;   // unique login identifier
+  password: string;   // plaintext (demo only, no real auth)
   role: Role;
   regionIds?: string[];  // supervisor only
   storeIds?: string[];   // manager only (can manage multiple stores)
