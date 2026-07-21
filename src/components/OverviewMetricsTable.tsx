@@ -23,6 +23,7 @@ interface Row {
   lunchPct: string | null;
   prevFoodPct: string | null;
   prevLaborPct: string | null;
+  prevAvgSpend: number | null;
   lastYearRev: number | null;
 }
 
@@ -42,6 +43,7 @@ const GETTERS: Record<string, (r: Row) => number> = {
   prevLaborPct:   (r) => parseFloat(r.prevLaborPct ?? '0') || 0,
   guests:         (r) => r.detail.guests,
   avgSpend:       (r) => r.detail.avgSpend,
+  prevAvgSpend:   (r) => r.prevAvgSpend ?? -Infinity,
   lunchPots:      (r) => r.lunchPots ?? -Infinity,
   lunchPct:       (r) => parseFloat(r.lunchPct ?? '0') || 0,
   memberTotal:    (r) => r.detail.member.total,
@@ -83,6 +85,7 @@ export default function OverviewMetricsTable({ details, stores }: Props) {
     const lunchPctAna   = findAna(d, '午間鍋佔比')?.current;
     const prevFoodAna   = findAna(d, '食材占比')?.prevMonth;
     const prevLaborAna  = findAna(d, '人事占比')?.prevMonth;
+    const prevAvgAna    = findAna(d, '客單價')?.prevMonth;
     const lastYearAna   = findAna(d, '營業額')?.lastYear;
     return {
       key: d.storeId,
@@ -95,6 +98,7 @@ export default function OverviewMetricsTable({ details, stores }: Props) {
       lunchPct:     typeof lunchPctAna  === 'string' ? lunchPctAna  : null,
       prevFoodPct:  typeof prevFoodAna  === 'string' ? prevFoodAna  : null,
       prevLaborPct: typeof prevLaborAna === 'string' ? prevLaborAna : null,
+      prevAvgSpend: typeof prevAvgAna   === 'number' ? prevAvgAna   : null,
       lastYearRev:  typeof lastYearAna  === 'number' ? lastYearAna  : null,
     };
   });
@@ -271,6 +275,13 @@ export default function OverviewMetricsTable({ details, stores }: Props) {
           onHeaderCell: () => ({ style: HEADER_STYLE }),
           render: (_: unknown, row: Row) => `$${fmtNumber(row.detail.avgSpend)}`,
         },
+        {
+          title: th('prevAvgSpend', '上月客單價'),
+          key: 'prevAvgSpend', width: 90, align: 'right',
+          onHeaderCell: () => ({ style: HEADER_STYLE }),
+          render: (_: unknown, row: Row) =>
+            row.prevAvgSpend !== null ? `$${fmtNumber(row.prevAvgSpend)}` : '—',
+        },
       ],
     },
 
@@ -405,11 +416,12 @@ export default function OverviewMetricsTable({ details, stores }: Props) {
             <Table.Summary.Cell index={14} align="right">—</Table.Summary.Cell>
             <Table.Summary.Cell index={15} align="right">—</Table.Summary.Cell>
             <Table.Summary.Cell index={16} align="right">—</Table.Summary.Cell>
-            <Table.Summary.Cell index={17} align="right">{fmtNumber(totalMemberSpend)}</Table.Summary.Cell>
-            <Table.Summary.Cell index={18} align="center">—</Table.Summary.Cell>
-            <Table.Summary.Cell index={19} align="right">—</Table.Summary.Cell>
+            <Table.Summary.Cell index={17} align="right">—</Table.Summary.Cell>
+            <Table.Summary.Cell index={18} align="right">{fmtNumber(totalMemberSpend)}</Table.Summary.Cell>
+            <Table.Summary.Cell index={19} align="center">—</Table.Summary.Cell>
             <Table.Summary.Cell index={20} align="right">—</Table.Summary.Cell>
             <Table.Summary.Cell index={21} align="right">—</Table.Summary.Cell>
+            <Table.Summary.Cell index={22} align="right">—</Table.Summary.Cell>
           </Table.Summary.Row>
         );
       }}

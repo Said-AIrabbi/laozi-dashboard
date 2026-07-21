@@ -18,19 +18,23 @@ export default function AppHeader() {
 
   return (
     <div
+      className="page-pad-x"
       style={{
         background: '#1F4E5F',
-        padding: '12px 24px',
+        paddingTop: 12,
+        paddingBottom: 12,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        rowGap: 8,
       }}
     >
-      <Title level={4} style={{ color: '#fff', margin: 0, fontSize: 18 }}>
-        🍲 荖子鍋 · 營運 BI Dashboard
+      <Title level={4} style={{ color: '#fff', margin: 0, fontSize: 18, whiteSpace: 'nowrap' }}>
+        🍲 荖子鍋<span className="header-subtitle"> · 營運 BI Dashboard</span>
       </Title>
 
-      <Space size={12}>
+      <Space size={12} wrap>
         {/* Role switcher (demo only) */}
         <RoleSwitcher />
 
@@ -47,14 +51,14 @@ export default function AppHeader() {
                 color: '#fff',
               }}
             >
-              報表上傳
+              <span className="btn-label">報表上傳</span>
             </Button>
           </Tooltip>
         )}
 
-        {/* User management — admin only */}
+        {/* System management — admin only */}
         {currentUser?.role === 'admin' && (
-          <Tooltip title="使用者管理">
+          <Tooltip title="系統管理">
             <Button
               icon={<TeamOutlined />}
               size="small"
@@ -65,7 +69,7 @@ export default function AppHeader() {
                 color: '#fff',
               }}
             >
-              使用者管理
+              <span className="btn-label">系統管理</span>
             </Button>
           </Tooltip>
         )}
@@ -82,7 +86,7 @@ export default function AppHeader() {
               color: '#fff',
             }}
           >
-            登出
+            <span className="btn-label">登出</span>
           </Button>
         </Tooltip>
       </Space>

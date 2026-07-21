@@ -9,7 +9,7 @@ import { COLORS } from '../lib/colors';
 const { Title, Text } = Typography;
 
 const roleLabel: Record<string, string> = {
-  admin: '系統管理',
+  admin: '系統管理員',
   director: '總監',
   supervisor: '分區督導',
   manager: '店長',
@@ -142,6 +142,7 @@ export default function Login() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                flexWrap: 'wrap',
                 gap: 10,
                 padding: '10px 14px',
                 borderRadius: 8,
@@ -159,7 +160,7 @@ export default function Login() {
                   color: '#fff',
                   border: 'none',
                   fontSize: 11,
-                  minWidth: 56,
+                  minWidth: 68,
                   textAlign: 'center',
                   margin: 0,
                 }}

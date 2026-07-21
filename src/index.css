@@ -4,13 +4,57 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  /* Prevent stray overflow (wide tables/charts) from causing whole-page horizontal scroll;
+     scrollable regions (tables, dropdown renders) keep their own overflow-x. */
+  overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC',
     'Microsoft JhengHei', sans-serif;
   background: #f0f4f8;
   color: #1a2a35;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── Responsive utilities ─────────────────────────────────────────── */
+
+/* Horizontal page padding: shrinks on narrow / mobile viewports */
+.page-pad-x {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Card head (title + extra button) wraps instead of overflowing on mobile */
+.ant-card-head-wrapper {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+@media (max-width: 576px) {
+  .page-pad-x {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Icon-only buttons on mobile — label text stays for tooltips/screen readers */
+  .btn-label {
+    display: none;
+  }
+
+  .header-subtitle {
+    display: none;
+  }
+
+  .role-select {
+    width: 110px !important;
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+    margin: 0 auto;
+    top: 16px;
+    padding-bottom: 16px;
+  }
 }
 
 /* Tabular numbers for data cells */

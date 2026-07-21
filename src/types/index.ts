@@ -133,4 +133,5 @@ export interface ImportRecord {
   fileName: string;
   uploadedAt: string;   // ISO
   status: ImportStatus;
+  failReason?: string;  // one-line reason shown when status isn't 'success'
 }

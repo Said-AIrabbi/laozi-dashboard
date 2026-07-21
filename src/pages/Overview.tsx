@@ -167,9 +167,11 @@ export default function Overview() {
 
       {/* Filter Bar */}
       <div
+        className="page-pad-x"
         style={{
           background: '#fff',
-          padding: '12px 24px',
+          paddingTop: 12,
+          paddingBottom: 12,
           borderBottom: '1px solid #e8edf2',
           display: 'flex',
           alignItems: 'center',
@@ -194,7 +196,7 @@ export default function Overview() {
         </Space>
       </div>
 
-      <div style={{ padding: '20px 24px' }}>
+      <div className="page-pad-x" style={{ paddingTop: 20, paddingBottom: 20 }}>
         {(currentUser.role !== 'manager' || (currentUser.storeIds?.length ?? 0) > 1) && (
           <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
             <Col xs={24} lg={12}>

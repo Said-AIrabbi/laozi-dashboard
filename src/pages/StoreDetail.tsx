@@ -211,6 +211,7 @@ export default function StoreDetail() {
           dataSource={activityData}
           columns={activityColumns}
           pagination={false}
+          scroll={{ x: 'max-content' }}
           rowClassName={(row) => (row.key === 'total' ? 'table-row-total' : '')}
         />
       ),
@@ -245,7 +246,7 @@ export default function StoreDetail() {
       {contextHolder}
       <AppHeader />
 
-      <div style={{ padding: '20px 24px' }}>
+      <div className="page-pad-x" style={{ paddingTop: 20, paddingBottom: 20 }}>
         {/* Breadcrumb */}
         {showBackButton && (
           <Breadcrumb
@@ -402,6 +403,7 @@ export default function StoreDetail() {
                 dataSource={detail.analysis.map((a, i) => ({ ...a, key: i }))}
                 columns={analysisColumns}
                 pagination={false}
+                scroll={{ x: 'max-content' }}
                 rowClassName={(_, idx) => (idx % 2 === 0 ? '' : 'table-row-alt')}
               />
               <div style={{ marginTop: 8, fontSize: 11, color: '#aaa' }}>

@@ -3,7 +3,7 @@ import { useRole } from '../context/RoleContext';
 import { COLORS } from '../lib/colors';
 
 const roleLabel: Record<string, string> = {
-  admin: '系統管理',
+  admin: '系統管理員',
   director: '總監',
   supervisor: '分區督導',
   manager: '店長',
@@ -35,8 +35,9 @@ export default function RoleSwitcher() {
       </Tag>
       <Select
         size="small"
+        className="role-select"
         value={currentUser.id}
-        style={{ width: 110 }}
+        style={{ width: 190 }}
         onChange={(id) => {
           const user = allUsers.find((u) => u.id === id);
           if (user) setCurrentUser(user);

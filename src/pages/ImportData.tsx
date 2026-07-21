@@ -18,6 +18,44 @@ import { mockStores } from '../mock/stores';
 import { COLORS } from '../lib/colors';
 import type { ImportRecord, ImportStatus, ReportType } from '../types';
 
+/** Demo-only validation: infers common upload errors from the file name, since
+ *  there's no real parsing backend yet. Mirrors the scenarios encoded in the seed data. */
+function validateFile(
+  fileName: string,
+  storeId: string,
+  periodStr: string,
+): { status: ImportStatus; failReason?: string } {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (!ext || !['xlsx', 'xls', 'csv'].includes(ext)) {
+    return { status: 'failed', failReason: '格式錯誤：不支援的檔案類型，請上傳 .xlsx / .xls / .csv' };
+  }
+
+  const selectedStoreName = mockStores.find(s => s.id === storeId)?.name;
+  const otherStore = mockStores.find(
+    s => s.id !== storeId && fileName.includes(s.name) && !fileName.includes(selectedStoreName ?? '\0'),
+  );
+  if (otherStore) {
+    return {
+      status: 'store_mismatch',
+      failReason: `門市不符：檔案內容顯示為「${otherStore.name}」，與所選門市「${selectedStoreName}」不符`,
+    };
+  }
+
+  const periodMatch = fileName.match(/20\d{2}-\d{2}/);
+  if (periodMatch && periodMatch[0] !== periodStr) {
+    return {
+      status: 'period_mismatch',
+      failReason: `期間不符：檔案內容為 ${periodMatch[0]}，與所選期間 ${periodStr} 不符`,
+    };
+  }
+
+  if (/壞|corrupt|損毀|error/i.test(fileName)) {
+    return { status: 'failed', failReason: '檔案無法開啟：請確認檔案未毀損，或重新匯出後再上傳' };
+  }
+
+  return { status: 'success' };
+}
+
 const { Text, Title } = Typography;
 
 /* ── Constants ──────────────────────────────────────────────────── */
@@ -114,10 +152,11 @@ export default function ImportData() {
       }),
     );
 
+    const results = fileList.map(file => validateFile(file.name, selectedStore, periodStr));
     setFileList([]);
 
     setTimeout(() => {
-      ids.forEach(id => updateRecord(id, { status: 'success' }));
+      ids.forEach((id, i) => updateRecord(id, results[i]));
     }, 1500);
   };
 
@@ -143,8 +182,9 @@ export default function ImportData() {
   };
 
   const handleReimport = (record: ImportRecord) => {
-    updateRecord(record.id, { status: 'parsing', uploadedAt: new Date().toISOString() });
-    setTimeout(() => updateRecord(record.id, { status: 'success' }), 1500);
+    updateRecord(record.id, { status: 'parsing', failReason: undefined, uploadedAt: new Date().toISOString() });
+    const result = validateFile(record.fileName, record.storeId, record.period);
+    setTimeout(() => updateRecord(record.id, result), 1500);
   };
 
   /* ── Table columns ───────────────────────────────────────────── */
@@ -179,8 +219,17 @@ export default function ImportData() {
     {
       title: '狀態',
       dataIndex: 'status',
-      width: 110,
-      render: (s: ImportStatus) => <StatusTag status={s} />,
+      width: 220,
+      render: (s: ImportStatus, record: ImportRecord) => (
+        <div>
+          <StatusTag status={s} />
+          {record.failReason && (
+            <div style={{ fontSize: 12, color: COLORS.red, marginTop: 4 }}>
+              {record.failReason}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       title: '操作',
@@ -222,7 +271,7 @@ export default function ImportData() {
       {contextHolder}
       <AppHeader />
 
-      <div style={{ padding: '24px', maxWidth: 1280, margin: '0 auto' }}>
+      <div className="page-pad-x" style={{ paddingTop: 24, paddingBottom: 24, maxWidth: 1280, margin: '0 auto' }}>
         {/* Page title */}
         <div style={{ marginBottom: 24 }}>
           <Button
@@ -369,7 +418,7 @@ export default function ImportData() {
             rowKey="id"
             size="small"
             pagination={{ pageSize: 10, showSizeChanger: false }}
-            scroll={{ x: 900 }}
+            scroll={{ x: 1010 }}
           />
         </Card>
       </div>

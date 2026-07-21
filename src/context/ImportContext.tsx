@@ -39,6 +39,7 @@ const SEED: ImportRecord[] = [
     fileName: 'CRM_中壢店_2026-02.xlsx',
     uploadedAt: '2026-03-03T14:22:00.000Z',
     status: 'store_mismatch',
+    failReason: '門市不符：檔案內容顯示為「中壢店」，與所選門市「桃園店」不符',
   },
   {
     id: 'seed-5',
@@ -48,6 +49,7 @@ const SEED: ImportRecord[] = [
     fileName: '中壢店_工時表_2026-01.xlsx',
     uploadedAt: '2026-03-05T11:30:00.000Z',
     status: 'period_mismatch',
+    failReason: '期間不符：檔案內容為 2026-01，與所選期間 2026-02 不符',
   },
   {
     id: 'seed-6',
@@ -57,6 +59,7 @@ const SEED: ImportRecord[] = [
     fileName: '採購入庫_2月.xlsx',
     uploadedAt: '2026-03-03T15:48:00.000Z',
     status: 'failed',
+    failReason: '檔案無法開啟：請確認檔案未毀損，或重新匯出後再上傳',
   },
   {
     id: 'seed-7',
